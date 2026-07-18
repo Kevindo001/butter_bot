@@ -25,6 +25,7 @@ onnxruntime==1.23.2
 openwakeword==0.6.0
 packaging==26.2
 protobuf==7.35.1
+python-dotenv==1.2.2
 PyYAML==6.0.3
 requests==2.34.2
 scikit-learn==1.7.2
