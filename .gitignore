@@ -1,0 +1,25 @@
+# Secrets
+.env
+
+# Virtual environment
+butter_env/
+
+# Runtime cache
+cache/
+
+# Models
+models/*.onnx
+models/**/*.onnx
+models/**/*.onnx.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# OS / editor cruft
+.DS_Store
+.vscode/
+.idea/
+*.swp

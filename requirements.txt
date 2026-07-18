@@ -24,6 +24,8 @@ numpy==2.2.6
 onnxruntime==1.23.2
 openwakeword==0.6.0
 packaging==26.2
+pathvalidate==3.3.1
+piper-tts==1.5.0
 protobuf==7.35.1
 python-dotenv==1.2.2
 PyYAML==6.0.3
