@@ -9,37 +9,9 @@
 
 Card indices are not guaranteed stable across reboots on Jetson — verify with `aplay -l` / `arecord -l` if audio breaks after a reboot or USB replug, and update the hw:X,Y references here and in code if they shift.
 
-## espeak voice
+## TTS: Piper (active)
 
-```
--v en-us+m5 -s 210 -p 75 -k 10 -a 200
-```
-
-| Flag | Meaning        | Value   |
-|------|----------------|---------|
-| -v   | voice          | en-us+m5 |
-| -s   | speed (wpm)    | 210     |
-| -p   | pitch          | 75      |
-| -k   | capitals emphasis | 10   |
-| -a   | amplitude      | 200     |
-
-Configurable via `.env`: `ESPEAK_VOICE`, `ESPEAK_SPEED`, `ESPEAK_PITCH`, `ESPEAK_CAPITALS`, `ESPEAK_AMPLITUDE`.
-
-## TTS pipeline
-
-BUTTER_SPEAKER only accepts 44100/48000 Hz stereo S16_LE, so espeak's raw output is always resampled through sox before playback:
-
-```
-espeak --stdout | sox -t wav - -t wav -r 44100 -c 2 - | aplay -D hw:2,0
-```
-
-- `espeak --stdout` — synthesize to WAV on stdout
-- `sox -t wav - -t wav -r 44100 -c 2 -` — resample to 44100 Hz, force stereo
-- `aplay -D hw:2,0` — play directly to BUTTER_SPEAKER
-
-## TTS candidate: Piper
-
-Evaluated as a more natural-sounding alternative to espeak. Not yet wired into the app — verified standalone via `test/piper_test.py`.
+Wired into the app via `src/butter_audio.py` (`speak(text, volume=None)`).
 
 Setup (model files are gitignored, `.onnx`/`.onnx.json` under `models/**`):
 
@@ -51,15 +23,21 @@ wget https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/me
 wget https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json
 ```
 
-Native output is 22050 Hz mono S16LE raw PCM (per the model's `.onnx.json` `audio.sample_rate`), resampled to BUTTER_SPEAKER's 44100 Hz stereo the same way as espeak:
+Native output is 22050 Hz mono S16LE raw PCM (per the model's `.onnx.json` `audio.sample_rate`), resampled to BUTTER_SPEAKER's 44100 Hz stereo the same way espeak used to be:
 
 ```
-piper --model models/piper/en_US-lessac-medium.onnx --output_raw | \
+piper --model models/piper/en_US-lessac-medium.onnx --output_raw --volume 1.0 | \
   sox -t raw -r 22050 -e signed -b 16 -c 1 - -t wav -r 44100 -c 2 - | \
   aplay -D hw:2,0
 ```
 
-If this sounds good, the plan is to replace espeak with Piper in `butter_audio.py` and point `.env` at the model path.
+`--volume` is a multiplier (default 1.0), configurable via `PIPER_VOLUME` in `.env`. Tested with `test/volume_test.py` — enter a value, hear a phrase spoken at that volume.
+
+Configurable via `.env`: `PIPER_BIN`, `PIPER_MODEL_PATH`, `PIPER_SAMPLE_RATE`, `PIPER_VOLUME`.
+
+## espeak removed (2026-07-17)
+
+Piper sounded more natural in an A/B listen test, so espeak was replaced everywhere: `src/butter_audio.py` now uses Piper exclusively, `test/speaker_test.py` (the espeak test) was deleted in favor of `test/piper_test.py`, and the `ESPEAK_*` vars are gone from `.env.example` in favor of `PIPER_*`. The `espeak`/`espeak-ng` apt packages (~13MB, package list: `espeak`, `espeak-data`, `espeak-ng-data`, `libespeak-ng1`, `libespeak1`, `speech-dispatcher-espeak-ng`) are no longer used by this project — `speech-dispatcher-espeak-ng` is a general Linux accessibility component, not butter-specific, so removing it system-wide was left as a manual step rather than done automatically.
 
 ## STT capture pipeline
 

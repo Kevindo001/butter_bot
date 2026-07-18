@@ -6,18 +6,23 @@ venv: butter_env (always activate before running anything)
 
 ## Architecture
 
-Wake word (OpenWakeWord) -> STT (Whisper) -> Brain (DeepSeek V4 Pro) -> TTS (espeak)
+Wake word (OpenWakeWord) -> STT (Whisper) -> Brain (DeepSeek V4 Pro) -> TTS (Piper)
 Vision: Jetson Inference + TensorRT + OpenCV
 
 ## Audio constraints
 
 - BUTTER_MIC (SABRENT): capture only, 44100 or 48000 Hz. Downsample to 16000 via sox for Whisper/OpenWakeWord.
-- BUTTER_SPEAKER (C-Media): playback only, stereo S16_LE, 44100 or 48000 Hz only. Always pipe espeak through sox.
-- TTS command: espeak --stdout | sox -t wav - -t wav -r 44100 -c 2 - | aplay -D hw:2,0
+- BUTTER_SPEAKER (C-Media): playback only, stereo S16_LE, 44100 or 48000 Hz only. Always pipe Piper through sox.
+- TTS command: piper --model models/piper/en_US-lessac-medium.onnx --output_raw | sox -t raw -r 22050 -e signed -b 16 -c 1 - -t wav -r 44100 -c 2 - | aplay -D hw:2,0
+- TTS module: src/butter_audio.py (speak(text, volume=None))
 
-## espeak voice config
+## Piper voice config
 
--v en-us+m5 -s 210 -p 75 -k 10 -a 200
+Model: models/piper/en_US-lessac-medium.onnx (gitignored, see config/voice.md for download steps)
+Native output: 22050 Hz mono S16LE raw PCM
+Volume: multiplier via --volume, default 1.0 (see PIPER_VOLUME in .env)
+
+espeak was removed (2026-07-17) — Piper sounds more natural and espeak is no longer used anywhere in this repo. See config/voice.md for the removal note.
 
 ## GPIO pin map (confirmed working)
 
@@ -68,4 +73,4 @@ cache/      runtime cache (gitignored)
 ## Environment
 
 All keys in .env, loaded via python-dotenv. Never hardcode.
-DEEPSEEK_API_KEY, ESPEAK_VOICE, ESPEAK_SPEED, ESPEAK_PITCH, ESPEAK_CAPITALS, ESPEAK_AMPLITUDE
+DEEPSEEK_API_KEY, PIPER_BIN, PIPER_MODEL_PATH, PIPER_SAMPLE_RATE, PIPER_VOLUME

@@ -28,7 +28,7 @@ A home robot built on the NVIDIA Jetson Orin Nano Super. Butter listens, thinks,
 - Brain: DeepSeek V4 Pro
 - Speaker verification: SpeechBrain
 - Vision: Jetson Inference + TensorRT + OpenCV
-- TTS: espeak -> sox -> aplay
+- TTS: Piper -> sox -> aplay
 
 ## Repo Structure
 

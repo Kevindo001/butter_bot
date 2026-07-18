@@ -22,8 +22,8 @@
 
 - Playback only
 - Accepts stereo S16_LE at 44100 or 48000 Hz only (no other rates, no mono)
-- All TTS output (espeak) must be piped through sox to match this format before aplay
-- See [[voice.md]] for the exact pipeline command
+- All TTS output (Piper) must be piped through sox to match this format before aplay
+- See [[voice.md]] for the exact pipeline command and the espeak removal note
 
 ## GPIO
 
