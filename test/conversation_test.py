@@ -18,6 +18,7 @@ from openwakeword.model import Model as WakeWordModel
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 from butter_audio import speak
+import butter_audio
 
 load_dotenv()
 
@@ -150,6 +151,7 @@ def capture_utterance(sox, rolling_buffer):
     speech_chunks = 0
     silence_chunks = 0
     speech_started = False
+    rms_values = []  # diagnostic only, to help tune SILENCE_RMS_THRESHOLD
     for _ in range(MAX_UTTERANCE_CHUNKS):
         chunk = read_chunk(sox)
         if chunk is None:
@@ -157,6 +159,7 @@ def capture_utterance(sox, rolling_buffer):
         chunks.append(chunk)
 
         rms = np.sqrt(np.mean(chunk.astype(np.float64) ** 2))
+        rms_values.append(rms)
         if rms >= SILENCE_RMS_THRESHOLD:
             speech_chunks += 1
             silence_chunks = 0
@@ -166,6 +169,12 @@ def capture_utterance(sox, rolling_buffer):
             silence_chunks += 1
             if silence_chunks >= SILENCE_CHUNKS_TO_STOP:
                 break
+
+    if rms_values:
+        above = sum(1 for v in rms_values if v >= SILENCE_RMS_THRESHOLD)
+        print(f"  vad: {len(rms_values)} new chunks, rms min={min(rms_values):.0f} "
+              f"max={max(rms_values):.0f} mean={sum(rms_values)/len(rms_values):.0f} "
+              f"(threshold={SILENCE_RMS_THRESHOLD}, {above}/{len(rms_values)} above)")
 
     pcm16 = np.concatenate(chunks) if chunks else np.zeros(0, dtype=np.int16)
     return pcm16.astype(np.float32) / 32768.0
@@ -282,11 +291,15 @@ def stream_and_speak(client, transcript):
 
 def main():
     print("Butter conversation pipeline test")
-    print("Say \"hey butter\", then speak. Ctrl+C to quit.\n")
+    print("Loading models...")
 
     wake_model = WakeWordModel(wakeword_models=[WAKE_MODEL_PATH], inference_framework="onnx")
     whisper_model = WhisperModel(WHISPER_MODEL_SIZE, device="cpu", compute_type="int8")
     brain = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL)
+    butter_audio._get_voice()  # forces Piper's model to warm-load now (~1.5s),
+                                # not silently inside the first turn's first sentence
+
+    print("Say \"hey butter\", then speak. Ctrl+C to quit.\n")
 
     history = {
         "wake": [], "stt": [],

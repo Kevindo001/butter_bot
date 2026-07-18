@@ -23,7 +23,7 @@ wget https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/me
 wget https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json
 ```
 
-Native output is 22050 Hz mono S16LE raw PCM (per the model's `.onnx.json` `audio.sample_rate`), resampled to BUTTER_SPEAKER's 44100 Hz stereo the same way espeak used to be:
+Native output is 22050 Hz mono S16LE raw PCM (per the model's `.onnx.json` `audio.sample_rate`), resampled to BUTTER_SPEAKER's 44100 Hz stereo the same way espeak used to be. The CLI pipe below is illustrative of the audio format/flow, but `src/butter_audio.py` does **not** actually shell out to the `piper` CLI - see the warm-load note below:
 
 ```
 piper --model models/piper/en_US-lessac-medium.onnx --output_raw --volume 1.0 | \
@@ -33,7 +33,15 @@ piper --model models/piper/en_US-lessac-medium.onnx --output_raw --volume 1.0 | 
 
 `--volume` is a multiplier (default 1.0), configurable via `PIPER_VOLUME` in `.env`. Tested with `test/volume_test.py` — enter a value, hear a phrase spoken at that volume.
 
-Configurable via `.env`: `PIPER_BIN`, `PIPER_MODEL_PATH`, `PIPER_SAMPLE_RATE`, `PIPER_VOLUME`.
+Configurable via `.env`: `PIPER_MODEL_PATH`, `PIPER_VOLUME`. (`PIPER_BIN`/`PIPER_SAMPLE_RATE` are no longer read - see below.)
+
+### Warm-loaded via the Python API, not the CLI (2026-07-17)
+
+`test/conversation_test.py`'s streaming TTS calls `speak()` once per sentence instead of once per turn. That exposed a real cost: the original implementation spawned a fresh `piper` **subprocess** per call, and each spawn pays ONNX Runtime session init again - benchmarked at ~1.5s. For a 2-sentence response that's ~1.5s of dead air *between* sentences on top of the first sentence's load time - this was the exact "weird pause" reported when testing live.
+
+Fixed by switching `src/butter_audio.py` to the `piper-tts` package's Python API (`from piper import PiperVoice, SynthesisConfig`) instead of the CLI: `PiperVoice.load(PIPER_MODEL_PATH)` runs once (lazily, on first `speak()` call, cached in a module global), and every subsequent `voice.synthesize(text)` is pure inference - benchmarked at ~0.1-0.25s per short sentence, no reload. `PIPER_BIN` and `PIPER_SAMPLE_RATE` are unused now (sample rate comes from the loaded model at runtime); `sox`/`aplay` are still invoked as subprocesses for resampling and playback, unchanged.
+
+Measured effect on `test/conversation_test.py`'s 2-sentence-response `response_total` latency: **12.25s -> 4.44s** for a comparable response.
 
 ## espeak removed (2026-07-17)
 
