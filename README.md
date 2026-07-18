@@ -21,7 +21,7 @@ A home robot built on the NVIDIA Jetson Orin Nano Super. Butter listens, thinks,
 - BUTTER_MIC captures at 44100 or 48000 Hz only. OpenWakeWord and Whisper require 16000 Hz input, so all mic audio is downsampled via sox before processing.
 - BUTTER_SPEAKER only accepts 44100 or 48000 Hz stereo S16_LE. All TTS output must be resampled via sox before playback or it will not work.
 
-## Stack
+## What we use
 
 - Wake word: OpenWakeWord (hey_butter.onnx)
 - STT: Whisper
@@ -30,29 +30,6 @@ A home robot built on the NVIDIA Jetson Orin Nano Super. Butter listens, thinks,
 - Vision: Jetson Inference + TensorRT + OpenCV
 - TTS: espeak -> sox -> aplay
 
-## Repo Structure
-
-butter/
-├── config/         hardware specs, voice config, motor wiring
-├── docs/           tool definitions and architecture notes
-├── prompts/        system prompt
-├── src/            all Python source
-├── models/         ONNX wake word model
-├── test/           hardware test scripts
-└── cache/          runtime cache (gitignored)
-
-## Setup
-
-git clone https://github.com/Kevindo001/butter_bot.git butter
-cd butter
-python3 -m venv butter_env
-source butter_env/bin/activate
-pip install -r requirements.txt
-cp .env.example .env
-
-## Environment Variables
-
-See .env.example for required keys. Never commit .env.
 
 ---
 
