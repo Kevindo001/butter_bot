@@ -7,6 +7,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 
 import numpy as np
 from dotenv import load_dotenv
@@ -190,24 +191,34 @@ def main():
     whisper_model = WhisperModel(WHISPER_MODEL_SIZE, device="cpu", compute_type="int8")
     brain = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL)
 
+    history = {"wake": [], "stt": [], "brain": [], "tts": [], "total": []}
+
     while True:
         print("Listening for \"hey butter\"...")
+        t_wake_start = time.monotonic()
         listen_for_wake(wake_model)
+        wake_latency = time.monotonic() - t_wake_start
 
         print("Listening...")
+        t_record_start = time.monotonic()
         audio = record_utterance()
+        recording_duration = time.monotonic() - t_record_start
         if audio.size == 0:
             print("  (no audio captured)\n")
             continue
 
+        t_stt_start = time.monotonic()
         segments, _ = whisper_model.transcribe(audio, language="en")
         transcript = " ".join(seg.text.strip() for seg in segments).strip()
+        stt_latency = time.monotonic() - t_stt_start
         print(f"  you said: {transcript}")
         if not transcript:
             print("  (empty transcript)\n")
             continue
 
+        t_brain_start = time.monotonic()
         response_text, finish_reason = ask_brain(brain, transcript)
+        brain_latency = time.monotonic() - t_brain_start
         spoken = extract_speak_text(response_text)
         if not spoken:
             if finish_reason == "length":
@@ -217,8 +228,28 @@ def main():
                 print(f"  (brain returned nothing to say - raw: {response_text!r})\n")
             continue
 
-        print(f"  butter says: {spoken}\n")
+        print(f"  butter says: {spoken}")
+        t_tts_start = time.monotonic()
         speak(spoken)
+        tts_latency = time.monotonic() - t_tts_start
+        total_latency = stt_latency + brain_latency + tts_latency
+
+        history["wake"].append(wake_latency)
+        history["stt"].append(stt_latency)
+        history["brain"].append(brain_latency)
+        history["tts"].append(tts_latency)
+        history["total"].append(total_latency)
+
+        def avg(key):
+            vals = history[key]
+            return sum(vals) / len(vals)
+
+        print(f"  latency: wake={wake_latency:.2f}s  recording={recording_duration:.2f}s  "
+              f"stt={stt_latency:.2f}s  brain={brain_latency:.2f}s  tts={tts_latency:.2f}s  "
+              f"total(stt+brain+tts)={total_latency:.2f}s")
+        print(f"  running avg over {len(history['total'])} turn(s): "
+              f"stt={avg('stt'):.2f}s  brain={avg('brain'):.2f}s  tts={avg('tts'):.2f}s  "
+              f"total={avg('total'):.2f}s\n")
 
 
 if __name__ == "__main__":
