@@ -37,6 +37,13 @@ butter/
 ├── docs/           tool definitions and architecture notes
 ├── prompts/        system prompt
 ├── src/            all Python source
+│   ├── butter_audio.py     Piper TTS (speak)
+│   ├── butter_motors.py    movement tools: move_forward, move_backward, rotate_left, rotate_right, stop
+│   ├── butter_camera.py    vision tools: capture_image + stubs (find_person, find_object, get_world_state, stream_start)
+│   ├── butter_calendar.py  calendar tools (stub, not wired to a provider yet)
+│   ├── butter_memory.py    memory tools (stub)
+│   ├── butter_search.py    web search tools (stub)
+│   └── butter_tools.py     central dispatcher — parses <action> tags, routes to the modules above
 ├── models/         ONNX wake word model
 ├── test/           hardware test scripts
 └── cache/          runtime cache (gitignored)
