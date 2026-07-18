@@ -66,7 +66,7 @@ MAX_UTTERANCE_CHUNKS = 100   # ~8s hard cap after wake fires
 # fires, that buffer (which already contains "hey butter" plus whatever
 # followed it while detection was catching up) seeds the utterance capture
 # instead of starting from silence.
-ROLLING_BUFFER_SECONDS = 3.0
+ROLLING_BUFFER_SECONDS = 1.5
 ROLLING_BUFFER_CHUNKS = int(round(ROLLING_BUFFER_SECONDS / CHUNK_SECONDS))
 
 SENTENCE_END_RE = re.compile(r"[.!?]+(?:\s|$)")
