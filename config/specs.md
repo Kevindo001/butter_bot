@@ -34,6 +34,13 @@
   - Run as: `sudo /home/anhdo001/Projects/butter/butter_env/bin/python3 script.py`
   - If native extensions need shared libs from the venv, preserve env: `sudo -E LD_LIBRARY_PATH=/home/anhdo001/Projects/butter/butter_env/lib/python3.10/site-packages/nvidia/cusparselt/lib:$LD_LIBRARY_PATH /home/anhdo001/Projects/butter/butter_env/bin/python3 script.py`
 
+## STT
+
+- Backend: `faster-whisper` (ctranslate2), model size `base`, running on **CPU** (`device="cpu", compute_type="int8"`) — not GPU yet.
+- PyPI's `ctranslate2` wheel for aarch64/Jetson has no CUDA support: the aarch64 manylinux wheel is 16.6MB vs. 39.2MB for the CUDA-bundled x86_64 wheel, and neither lists bundled CUDA runtime deps. `device="cuda"` will not work with the pip-installed package.
+- Getting real GPU execution requires building `ctranslate2` from source with `-DWITH_CUDA=ON -DWITH_CUDNN=ON -DCMAKE_CUDA_ARCHITECTURES=87` (Orin's compute capability). Build tools (cmake, g++, git) and cuDNN 9.3/CUDA 12.6 are already installed on this machine; expect roughly 30-90 min to build on 6 cores. Deferred — revisit when GPU STT is actually needed.
+- Latency/accuracy test: `test/whisper_latency_test.py`
+
 ## Camera
 
 - USB camera, consumed via OpenCV / Jetson Inference + TensorRT for vision
