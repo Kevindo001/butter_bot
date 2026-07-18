@@ -51,8 +51,10 @@ Rules:
 - Keep it short: one or two sentences. You have room for up to 100 tokens but should rarely need it - don't ramble."""
 
 # Simple energy-based end-of-utterance detection (no manual button press).
-SILENCE_RMS_THRESHOLD = 400
-MIN_SPEECH_CHUNKS = 3        # ~240ms of speech before we consider it started
+SILENCE_RMS_THRESHOLD = 2500
+# The wake word already confirms speech is happening, so there's no random
+# noise spike to filter out at recording start - one loud chunk is enough.
+MIN_SPEECH_CHUNKS = 1
 SILENCE_CHUNKS_TO_STOP = 12  # ~960ms of silence ends the utterance
 MAX_UTTERANCE_CHUNKS = 100   # ~8s hard cap after wake fires
 
