@@ -10,9 +10,15 @@ import cv2
 
 
 class LivePreview:
-    def __init__(self, camera_index=0, port=8080):
+    def __init__(self, camera_index=0, port=8080, frame_source=None):
+        """frame_source: optional zero-arg callable returning a frame (or
+        None). If given, LivePreview polls it instead of opening its own
+        cv2.VideoCapture - use this when another part of the process
+        already owns the camera (e.g. butter_camera's stream_start()),
+        since most USB cameras reject a second concurrent capture handle."""
         self.camera_index = camera_index
         self.port = port
+        self.frame_source = frame_source
         self._cap = None
         self._server = None
         self._lock = threading.Lock()
@@ -21,9 +27,10 @@ class LivePreview:
         self._stop = threading.Event()
 
     def start(self):
-        self._cap = cv2.VideoCapture(self.camera_index)
-        if not self._cap.isOpened():
-            raise RuntimeError(f"failed to open camera index {self.camera_index}")
+        if self.frame_source is None:
+            self._cap = cv2.VideoCapture(self.camera_index)
+            if not self._cap.isOpened():
+                raise RuntimeError(f"failed to open camera index {self.camera_index}")
 
         threading.Thread(target=self._capture_loop, daemon=True).start()
 
@@ -51,7 +58,11 @@ class LivePreview:
 
     def _capture_loop(self):
         while not self._stop.is_set():
-            ok, frame = self._cap.read()
+            if self.frame_source is not None:
+                frame = self.frame_source()
+                ok = frame is not None
+            else:
+                ok, frame = self._cap.read()
             if ok:
                 with self._lock:
                     self._latest_frame = frame

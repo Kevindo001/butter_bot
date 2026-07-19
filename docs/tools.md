@@ -34,9 +34,21 @@ Format: what it does, input, output.
 - **Input:** none
 - **Output:** none
 
+## stream_start
+
+- **What it does:** Starts a background daemon thread that continuously reads the USB camera (camera index 0, MJPG at 1920x1080 — raw YUYV at that resolution overruns USB2 bandwidth and crashes when read continuously, so the capture is forced to MJPG) and publishes frames to `world_state` at two resolutions: `"full"` (native 1080p, for `capture_image`/`find_person`) and `"preview"` (320x240, for fast per-frame tracking). Idempotent — calling it again while already running is a no-op. Never blocks or raises on a dropped frame, it just skips it.
+- **Input:** none
+- **Output:** none
+
+## get_world_state
+
+- **What it does:** Returns a snapshot dict of the latest frames published by `stream_start` (thread-safe copy). May be missing keys if `stream_start` hasn't produced a frame yet.
+- **Input:** none
+- **Output:** `{"full": ndarray, "preview": ndarray}` (keys may be absent early on)
+
 ## capture_image
 
-- **What it does:** Grabs a single frame from the USB camera (OpenCV, camera index 0). Three modes based on the flags:
+- **What it does:** Starts the camera stream if not already running, then grabs the latest `"full"` frame from `world_state`. Three modes based on the flags:
   - Default (`send_to_telegram=False`): describes the frame via OpenAI vision (`gpt-4o-mini`) and returns the description to be spoken.
   - `send_to_telegram=True, analyze=False`: sends the raw photo to Telegram (`TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID` from `.env`), no analysis.
   - `send_to_telegram=True, analyze=True`: describes via OpenAI vision, sends the photo to Telegram with the description as the caption.
@@ -46,7 +58,7 @@ Format: what it does, input, output.
 
 ## find_person
 
-- **What it does:** Checks the current camera view for a single enrolled face (`face-recognition` PyPI package, local dlib model — no LLM call). Grabs a frame, encodes any faces found, and compares against the embeddings in `models/anh_face.pkl`.
+- **What it does:** Checks the latest `"full"` frame in `world_state` for a single enrolled face (`face-recognition` PyPI package, local dlib model — no LLM call), starting the camera stream if not already running.
 - **Input:** none
 - **Output:** `{"found": False}`, or `{"found": True, "confidence": float, "location": {"top", "right", "bottom", "left"}}` for the closest match under `FACE_MATCH_TOLERANCE` (0.5)
 - **Requires:** `face-recognition` + `dlib` (in `requirements.txt`) and an enrolled face — run `test/enroll_face.py` once to create `models/anh_face.pkl` (gitignored, biometric data). Raises `RuntimeError` if that file doesn't exist yet.
@@ -56,8 +68,6 @@ Format: what it does, input, output.
 Tools not yet implemented — add a section above and remove from here once built. Stub signatures exist in `src/` but every one below currently raises `NotImplementedError`:
 
 - `find_object(label)` (`src/butter_camera.py`) — locate a named object in the current camera view
-- `get_world_state()` (`src/butter_camera.py`) — structured summary of detected people/objects for the Brain
-- `stream_start()` (`src/butter_camera.py`) — start a live video stream
 - `get_calendar_events()` (`src/butter_calendar.py`) — not wired to a calendar provider; `prompts/system_prompt.txt` should keep declining calendar requests until this exists
 - `create_calendar_event(title, start_time)` (`src/butter_calendar.py`)
 - `read_memory()` / `save_memory(content)` (`src/butter_memory.py`)

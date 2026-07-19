@@ -36,10 +36,17 @@
 
 ## STT
 
-- Backend: `faster-whisper` (ctranslate2), model size `base`, running on **CPU** (`device="cpu", compute_type="int8"`) — not GPU yet.
-- PyPI's `ctranslate2` wheel for aarch64/Jetson has no CUDA support: the aarch64 manylinux wheel is 16.6MB vs. 39.2MB for the CUDA-bundled x86_64 wheel, and neither lists bundled CUDA runtime deps. `device="cuda"` will not work with the pip-installed package.
-- Getting real GPU execution requires building `ctranslate2` from source with `-DWITH_CUDA=ON -DWITH_CUDNN=ON -DCMAKE_CUDA_ARCHITECTURES=87` (Orin's compute capability). Build tools (cmake, g++, git) and cuDNN 9.3/CUDA 12.6 are already installed on this machine; expect roughly 30-90 min to build on 6 cores. Deferred — revisit when GPU STT is actually needed.
-- Latency/accuracy test: `test/whisper_latency_test.py`
+- Backend: `faster-whisper` (ctranslate2), model size `base` by default.
+- `ctranslate2` 4.8.1 compiled from source with CUDA+cuDNN support (`-DWITH_CUDA=ON -DWITH_CUDNN=ON -DCMAKE_CUDA_ARCHITECTURES=87`, Orin's compute capability, CUDA 12.6), then installed system-wide via `sudo make install` + `ldconfig` (`libctranslate2.so` lives under `/usr/local/lib`, not bundled in `butter_env`) with the Python bindings installed into `butter_env` on top. Replaces the CPU-only PyPI aarch64 wheel — `device="cuda"` now works.
+- Verify: `python3 -c "import ctranslate2; print(ctranslate2.get_cuda_device_count())"` → `1`
+- GPU vs CPU latency comparison across tiny.en/base/small: `test/whisper_gpu_benchmark.py`
+- Original CPU-only latency/accuracy test: `test/whisper_latency_test.py` (note: its "no CUDA support" comment predates the from-source rebuild above and is now stale)
+
+## Face Recognition
+
+- Backend: `dlib` (via the `face-recognition` PyPI package), used by `find_person()` in `src/butter_camera.py`.
+- `dlib` 20.0.99 compiled from source with CUDA support (`DLIB_USE_CUDA=True`, targeting sm_87) and installed into `butter_env` — replaces the CPU-only PyPI wheel.
+- Verify: `python3 -c "import dlib; print(dlib.DLIB_USE_CUDA, dlib.cuda.get_num_devices())"` → `True 1`
 
 ## Camera
 

@@ -12,12 +12,10 @@ MODEL_RATE = 16000
 MODEL_SIZE = "base"
 NUM_QUERIES = 10
 
-# CPU baseline only. faster-whisper's backend (ctranslate2) has no CUDA
-# support on this machine: the PyPI aarch64 wheel is CPU-only (see
-# config/specs.md, STT section). device="cuda" will not work until
-# ctranslate2 is rebuilt from source with CUDA+cuDNN for sm_87.
-DEVICE = "cpu"
-COMPUTE_TYPE = "int8"
+# GPU: ctranslate2 was rebuilt from source with CUDA+cuDNN for sm_87 (see
+# config/specs.md, STT section) - base/GPU is now the standard STT config.
+DEVICE = "cuda"
+COMPUTE_TYPE = "float16"
 
 
 def record_utterance():

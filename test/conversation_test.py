@@ -31,7 +31,9 @@ CHUNK_SECONDS = CHUNK_SAMPLES / MODEL_RATE
 WAKE_MODEL_PATH = "models/hey_butter.onnx"
 WAKE_THRESHOLD = 0.5
 
-WHISPER_MODEL_SIZE = "tiny.en"
+WHISPER_MODEL_SIZE = "base"
+WHISPER_DEVICE = "cuda"
+WHISPER_COMPUTE_TYPE = "float16"
 
 DEEPSEEK_API_KEY = os.environ["DEEPSEEK_API_KEY"]
 DEEPSEEK_MODEL = os.environ.get("DEEPSEEK_MODEL", "deepseek-v4-pro")
@@ -296,7 +298,7 @@ def main():
     print("Loading models...")
 
     wake_model = WakeWordModel(wakeword_models=[WAKE_MODEL_PATH], inference_framework="onnx")
-    whisper_model = WhisperModel(WHISPER_MODEL_SIZE, device="cpu", compute_type="int8")
+    whisper_model = WhisperModel(WHISPER_MODEL_SIZE, device=WHISPER_DEVICE, compute_type=WHISPER_COMPUTE_TYPE)
     brain = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL)
     butter_audio._get_voice()  # forces Piper's model to warm-load now (~1.5s),
                                 # not silently inside the first turn's first sentence

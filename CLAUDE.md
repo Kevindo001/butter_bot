@@ -9,6 +9,12 @@ venv: butter_env (always activate before running anything)
 Wake word (OpenWakeWord) -> STT (Whisper) -> Brain (DeepSeek V4 Pro) -> TTS (Piper)
 Vision: Jetson Inference + TensorRT + OpenCV
 
+## GPU acceleration
+
+- dlib 20.0.99: compiled from source with CUDA support (sm_87, Orin Nano Super's compute capability), installed into butter_env. Replaces the CPU-only PyPI wheel — find_person()/face_recognition now run on GPU. Verify: `python3 -c "import dlib; print(dlib.DLIB_USE_CUDA, dlib.cuda.get_num_devices())"` -> True 1
+- ctranslate2 4.8.1: compiled from source with CUDA+cuDNN support (CUDA 12.6, sm_87), installed system-wide via `sudo make install` + `ldconfig` (libctranslate2.so under /usr/local/lib, not bundled in butter_env), Python bindings installed into butter_env on top. faster-whisper can now run on GPU via device="cuda". Verify: `python3 -c "import ctranslate2; print(ctranslate2.get_cuda_device_count())"` -> 1
+- Full detail: config/specs.md (STT, Face Recognition sections). GPU vs CPU benchmark: test/whisper_gpu_benchmark.py
+
 ## Audio constraints
 
 - BUTTER_MIC (SABRENT): capture only, 44100 or 48000 Hz. Downsample to 16000 via sox for Whisper/OpenWakeWord.
