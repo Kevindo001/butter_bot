@@ -9,6 +9,8 @@ venv: butter_env (always activate before running anything)
 Wake word (OpenWakeWord) -> STT (Whisper) -> Brain (DeepSeek V4 Pro) -> TTS (Piper)
 Vision: Jetson Inference + TensorRT + OpenCV
 
+Brain -> tool execution is NOT wired yet: `src/butter_tools.py`'s `parse_action()`/`dispatch()` are still stubs, so no `<action>` tag actually calls anything regardless of what's in `TOOL_REGISTRY` or `prompts/system_prompt.txt`. `test/conversation_test.py` (the one real conversation-pipeline test) disables `<action>` tags entirely. See `docs/tools.md` for what's built vs. reachable per tool.
+
 ## GPU acceleration
 
 - dlib 20.0.99: compiled from source with CUDA support (sm_87, Orin Nano Super's compute capability), installed into butter_env. Replaces the CPU-only PyPI wheel — find_person()/face_recognition now run on GPU. Verify: `python3 -c "import dlib; print(dlib.DLIB_USE_CUDA, dlib.cuda.get_num_devices())"` -> True 1
