@@ -27,7 +27,7 @@ Tools available (see docs/tools.md for full detail):
 - rotate_left(degrees)    # counterclockwise
 - rotate_right(degrees)   # clockwise
 - stop()
-- capture_image()   # grabs a frame; no object/scene detection yet — describe only what's given to you as vision output, don't invent contents
+- capture_image()   # grabs a frame and returns an OpenAI-vision description as vision output on the next turn; describe only what's given to you, don't invent contents
 
 ## Memory
 

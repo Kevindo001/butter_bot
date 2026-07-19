@@ -55,7 +55,7 @@ SILENCE_RMS_THRESHOLD = 2500
 # The wake word already confirms speech is happening, so there's no random
 # noise spike to filter out at recording start - one loud chunk is enough.
 MIN_SPEECH_CHUNKS = 1
-SILENCE_CHUNKS_TO_STOP = 12  # ~960ms of silence ends the utterance
+SILENCE_CHUNKS_TO_STOP = 7  # ~960ms of silence ends the utterance
 MAX_UTTERANCE_CHUNKS = 100   # ~8s hard cap after wake fires
 
 # Rolling pre-wake buffer: openwakeword only fires once "hey butter" is

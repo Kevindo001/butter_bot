@@ -12,6 +12,9 @@ models/*.onnx
 models/**/*.onnx
 models/**/*.onnx.json
 
+# Enrolled face embeddings (biometric data)
+models/*.pkl
+
 # Python
 __pycache__/
 *.py[cod]

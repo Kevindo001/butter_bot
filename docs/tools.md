@@ -36,15 +36,25 @@ Format: what it does, input, output.
 
 ## capture_image
 
-- **What it does:** Grabs a single frame from the USB camera for the vision pipeline (OpenCV / Jetson Inference + TensorRT).
+- **What it does:** Grabs a single frame from the USB camera (OpenCV, camera index 0). Three modes based on the flags:
+  - Default (`send_to_telegram=False`): describes the frame via OpenAI vision (`gpt-4o-mini`) and returns the description to be spoken.
+  - `send_to_telegram=True, analyze=False`: sends the raw photo to Telegram (`TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID` from `.env`), no analysis.
+  - `send_to_telegram=True, analyze=True`: describes via OpenAI vision, sends the photo to Telegram with the description as the caption.
+- **Input:** `send_to_telegram` (bool, default False), `analyze` (bool, default False)
+- **Output:** the OpenAI vision description (string), or `None` when only posting a raw photo to Telegram
+- **Requires:** `OPENAI_API_KEY` in `.env` for the description path (already set, see `.env.example`)
+
+## find_person
+
+- **What it does:** Checks the current camera view for a single enrolled face (`face-recognition` PyPI package, local dlib model — no LLM call). Grabs a frame, encodes any faces found, and compares against the embeddings in `models/anh_face.pkl`.
 - **Input:** none
-- **Output:** image frame (format TBD once vision pipeline is implemented)
+- **Output:** `{"found": False}`, or `{"found": True, "confidence": float, "location": {"top", "right", "bottom", "left"}}` for the closest match under `FACE_MATCH_TOLERANCE` (0.5)
+- **Requires:** `face-recognition` + `dlib` (in `requirements.txt`) and an enrolled face — run `test/enroll_face.py` once to create `models/anh_face.pkl` (gitignored, biometric data). Raises `RuntimeError` if that file doesn't exist yet.
 
 ## TBD / planned
 
 Tools not yet implemented — add a section above and remove from here once built. Stub signatures exist in `src/` but every one below currently raises `NotImplementedError`:
 
-- `find_person()` (`src/butter_camera.py`) — locate a person in the current camera view
 - `find_object(label)` (`src/butter_camera.py`) — locate a named object in the current camera view
 - `get_world_state()` (`src/butter_camera.py`) — structured summary of detected people/objects for the Brain
 - `stream_start()` (`src/butter_camera.py`) — start a live video stream
