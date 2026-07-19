@@ -13,7 +13,10 @@ follows.
 Ctrl+C stops the motors immediately and signals follow_me() to stop
 cleanly via request_follow_stop() (mostly symbolic at that point - the
 KeyboardInterrupt already unwinds the loop - but included since it's the
-same mechanism a future voice "stop" command would use).
+same mechanism a future voice "stop" command would use). motor_stop() also
+runs as the first line of the finally block, so motors stop on ANY exit
+path - a normal return, Ctrl+C, or an unexpected exception from follow_me()
+itself - not just the Ctrl+C case.
 
 Run: python3 test/test_follow_me_motors.py
 
@@ -88,6 +91,7 @@ def main():
         request_follow_stop()
         print("Motors stopped, follow_me() signaled to stop.")
     finally:
+        motor_stop()
         if _preview is not None:
             _preview.stop()
 
